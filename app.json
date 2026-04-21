@@ -1,30 +1,73 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "FitForge",
+    "slug": "fitforge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "scheme": "fitforge",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0A",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0A0A0A"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.fitforge.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0A0A0A"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "com.fitforge.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
+      "bundler": "metro",
+      "output": "static",
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/bebas-neue/BebasNeue_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/dm-sans/DMSans_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/dm-sans/DMSans_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/dm-sans/DMSans_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/dm-sans/DMSans_700Bold.ttf",
+            "./node_modules/@expo-google-fonts/dm-mono/DMMono_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/dm-mono/DMMono_500Medium.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FitForge needs camera access to scan QR codes for gym check-ins."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fitforge-project-id"
+      }
     }
   }
 }
