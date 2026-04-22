@@ -1,5 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewProps, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  ChevronLeftIcon,
+  CheckCircleIcon,
+  CurrencyRupeeIcon,
+  UsersIcon,
+  DocumentTextIcon,
+  CalendarDaysIcon,
+  InboxIcon,
+} from 'react-native-heroicons/outline';
 import { Colors } from '../../constants/colors';
 import { Typography } from '../../constants/typography';
 import { Layout } from '../../constants/spacing';
@@ -91,7 +101,7 @@ export function AvatarGroup({ names, max = 3, size = Layout.avatarSm }: AvatarGr
 // ─── Empty State ─────────────────────────────────────────────────────────────
 
 interface EmptyStateProps {
-  icon?:     string;   // emoji or icon
+  icon?:     string | React.ReactNode;
   title:     string;
   message?:  string;
   subtitle?: string;   // alias for message
@@ -99,11 +109,25 @@ interface EmptyStateProps {
   style?:    ViewProps['style'];
 }
 
-export function EmptyState({ icon = '📭', title, message, subtitle, action, style }: EmptyStateProps) {
+const EMPTY_STATE_ICONS = {
+  'checkmark-circle-outline': CheckCircleIcon,
+  'cash-outline': CurrencyRupeeIcon,
+  'people-outline': UsersIcon,
+  'document-text-outline': DocumentTextIcon,
+  'calendar-outline': CalendarDaysIcon,
+} as const;
+
+export function EmptyState({ icon = 'inbox', title, message, subtitle, action, style }: EmptyStateProps) {
   const body = message ?? subtitle;
+  const iconFromKey =
+    typeof icon === 'string' ? EMPTY_STATE_ICONS[icon as keyof typeof EMPTY_STATE_ICONS] : null;
+  const IconComponent = iconFromKey ?? InboxIcon;
+
   return (
     <View style={[styles.emptyContainer, style]}>
-      <Text style={styles.emptyIcon}>{icon}</Text>
+      {typeof icon === 'string'
+        ? <IconComponent size={50} color={Colors.textSecondary} strokeWidth={1.8} />
+        : icon}
       <Text style={styles.emptyTitle}>{title}</Text>
       {body && <Text style={styles.emptyMessage}>{body}</Text>}
       {action && <View style={{ marginTop: 24 }}>{action}</View>}
@@ -136,13 +160,14 @@ interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, subtitle, left, right, showBack, onBack }: ScreenHeaderProps) {
+  const insets = useSafeAreaInsets();
   const leftNode = left ?? (showBack ? (
-    <TouchableOpacity onPress={onBack} style={{ padding: 4 }}>
-      <Text style={{ color: Colors.accent, fontSize: 22 }}>‹</Text>
+    <TouchableOpacity onPress={onBack} style={{ padding: 4 }} accessibilityRole="button" accessibilityLabel="Go back">
+      <ChevronLeftIcon size={22} color={Colors.accent} strokeWidth={2.4} />
     </TouchableOpacity>
   ) : null);
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         {leftNode}
         <View>
@@ -194,8 +219,8 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
     padding:        32,
+    gap:            6,
   },
-  emptyIcon:    { fontSize: 48, marginBottom: 16 },
   emptyTitle:   { ...Typography.headingMd, color: Colors.textPrimary, textAlign: 'center', marginBottom: 8 },
   emptyMessage: { ...Typography.bodyMd,    color: Colors.textSecondary, textAlign: 'center' },
 

@@ -10,6 +10,55 @@ import { Layout } from '../../../constants/spacing';
 import { ScreenHeader, SearchInput, MemberCard, EmptyState, LoadingOverlay, Button } from '../../../components/ui';
 import { getDaysLeft } from '../../../utils/date';
 
+function toTitleFromHandle(raw: string) {
+  return raw
+    .replace(/[._-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function getMemberIdentity(user?: { name?: string; phone?: string; email?: string } | null) {
+  const name = (user?.name ?? '').trim();
+  const email = (user?.email ?? '').trim();
+  const phoneOrId = (user?.phone ?? '').trim();
+  const source = email || phoneOrId;
+
+  if (name) {
+    return {
+      displayName: name,
+      secondary: source,
+    };
+  }
+
+  if (source.includes('@')) {
+    return {
+      displayName: toTitleFromHandle(source.split('@')[0]),
+      secondary: source,
+    };
+  }
+
+  if (source.startsWith('user_')) {
+    return {
+      displayName: 'New Member',
+      secondary: source.length > 24 ? `${source.slice(0, 24)}...` : source,
+    };
+  }
+
+  if (source) {
+    return {
+      displayName: source,
+      secondary: source,
+    };
+  }
+
+  return {
+    displayName: 'Unknown Member',
+    secondary: '',
+  };
+}
+
 export default function MembersListScreen() {
   const router = useRouter();
   const { gymId } = useAuthStore();
@@ -22,9 +71,11 @@ export default function MembersListScreen() {
   }
 
   const members = rawMembers.filter(m => {
-    const name = m.user?.name ?? '';
-    const phone = m.user?.phone ?? '';
-    return name.toLowerCase().includes(search.toLowerCase()) || phone.includes(search);
+    const identity = getMemberIdentity(m.user);
+    return (
+      identity.displayName.toLowerCase().includes(search.toLowerCase()) ||
+      identity.secondary.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   return (
@@ -48,15 +99,19 @@ export default function MembersListScreen() {
         data={members}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <MemberCard
-            name={item.user?.name ?? 'Unknown'}
-            phone={item.user?.phone ?? ''}
-            status={item.status}
-            daysLeft={getDaysLeft(item.endDate)}
-            onPress={() => router.push(`/members/${item._id}`)}
-          />
-        )}
+        renderItem={({ item }) => {
+          const identity = getMemberIdentity(item.user);
+
+          return (
+            <MemberCard
+              name={identity.displayName}
+              phone={identity.secondary}
+              status={item.status}
+              daysLeft={getDaysLeft(item.endDate)}
+              onPress={() => router.push(`/members/${item.memberId}`)}
+            />
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <EmptyState

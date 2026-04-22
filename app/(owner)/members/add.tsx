@@ -14,7 +14,7 @@ import { Id } from '../../../convex/_generated/dataModel';
 
 export default function AddMemberScreen() {
   const router = useRouter();
-  const { gymId, userId } = useAuthStore();
+  const { gymId } = useAuthStore();
   const { setLoading, showToast } = useUIStore();
   
   const addMember = useMutation(api.members.add);
@@ -46,7 +46,6 @@ export default function AddMemberScreen() {
 
       await addMember({
         gymId: gymId as Id<'gyms'>,
-        addedBy: userId as Id<'users'>,
         name: name.trim(),
         phone: phoneDigits,
         subscriptionType: selectedDuration === 30 ? 'monthly' : selectedDuration === 90 ? 'quarterly' : 'yearly',
@@ -97,6 +96,7 @@ export default function AddMemberScreen() {
             {SUBSCRIPTION_DURATIONS.map(dur => (
               <Button
                 key={dur.key}
+                size="md"
                 variant={selectedDuration === dur.days ? 'primary' : 'secondary'}
                 title={dur.label}
                 onPress={() => setSelectedDuration(dur.days)}
@@ -147,7 +147,6 @@ const styles = StyleSheet.create({
   durationBtn: {
     flex: 1,
     minWidth: '45%',
-    paddingVertical: 10,
   },
   footer: {
     padding: Layout.screenPadding,

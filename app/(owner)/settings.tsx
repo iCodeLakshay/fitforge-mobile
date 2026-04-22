@@ -10,21 +10,23 @@ import { ScreenHeader, Button, Card, Input, LoadingOverlay } from '../../compone
 import { useAuthStore } from '../../stores/auth.store';
 import { Id } from '../../convex/_generated/dataModel';
 import { useUIStore } from '../../stores/ui.store';
+import { useSignOut } from '../../hooks/useSignOut';
 
 export default function OwnerSettingsScreen() {
   const router = useRouter();
-  const { logout, gymId } = useAuthStore();
+  const { gymId } = useAuthStore();
+  const signOut = useSignOut();
   const { showToast } = useUIStore();
-  
+
   const gym = useQuery(api.gym.getGym, gymId ? { gymId: gymId as Id<'gyms'> } : 'skip');
   const updateName = useMutation(api.gym.updateName);
 
   const [editName, setEditName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/(auth)/login');
+  const handleLogout = async () => {
+    await signOut();
+    // AuthGuard handles the redirect.
   };
 
   const handleShareCode = async () => {

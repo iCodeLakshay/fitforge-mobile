@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery } from 'convex/react';
+import { BanknotesIcon, CreditCardIcon, QrCodeIcon } from 'react-native-heroicons/outline';
 import { api } from '../../../convex/_generated/api';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useUIStore } from '../../../stores/ui.store';
 import { Colors } from '../../../constants/colors';
-import { Layout } from '../../../constants/spacing';
+import { Layout, Radius } from '../../../constants/spacing';
+import { Typography } from '../../../constants/typography';
 import { ScreenHeader, Input, Button, Card } from '../../../components/ui';
 import { Id } from '../../../convex/_generated/dataModel';
+
+const PAYMENT_MODES = [
+  { key: 'cash', label: 'Cash', Icon: BanknotesIcon },
+  { key: 'upi', label: 'UPI', Icon: QrCodeIcon },
+  { key: 'card', label: 'Card', Icon: CreditCardIcon },
+] as const;
 
 export default function RecordPaymentScreen() {
   const router = useRouter();
   const { memberId: prefillMemberId } = useLocalSearchParams<{ memberId: Id<'users'> }>();
-  const { gymId, userId } = useAuthStore();
+  const { gymId } = useAuthStore();
   const { setLoading, showToast } = useUIStore();
   
   const recordManual = useMutation(api.payments.recordManual);
@@ -74,25 +82,25 @@ export default function RecordPaymentScreen() {
         </Card>
 
         <Card padding style={styles.card}>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button 
-              title="Cash" 
-              variant={mode === 'cash' ? 'primary' : 'secondary'}
-              onPress={() => setMode('cash')}
-              style={{ flex: 1 }}
-            />
-            <Button 
-              title="UPI (Direct)" 
-              variant={mode === 'upi' ? 'primary' : 'secondary'}
-              onPress={() => setMode('upi')}
-              style={{ flex: 1 }}
-            />
-            <Button 
-              title="Card (POS)" 
-              variant={mode === 'card' ? 'primary' : 'secondary'}
-              onPress={() => setMode('card')}
-              style={{ flex: 1 }}
-            />
+          <View style={styles.modeRow}>
+            {PAYMENT_MODES.map(({ key, label, Icon }) => {
+              const focused = mode === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.modeChip, focused && styles.modeChipActive]}
+                  onPress={() => setMode(key)}
+                  activeOpacity={0.75}
+                >
+                  <Icon
+                    size={18}
+                    color={focused ? Colors.textOnAccent : Colors.textSecondary}
+                    strokeWidth={2}
+                  />
+                  <Text style={[styles.modeText, focused && styles.modeTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Card>
       </ScrollView>
@@ -115,6 +123,33 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: 12,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modeChip: {
+    flex: 1,
+    height: 44,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface02,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  modeChipActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  modeText: {
+    ...Typography.labelMd,
+    color: Colors.textSecondary,
+  },
+  modeTextActive: {
+    color: Colors.textOnAccent,
   },
   footer: {
     padding: Layout.screenPadding,

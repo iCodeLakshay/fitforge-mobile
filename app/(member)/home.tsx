@@ -19,12 +19,7 @@ import { Layout, Radius, Spacing } from '../../constants/spacing';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function MemberHomeScreen() {
-  const { userId } = useAuthStore();
-
-  const subscriptions = useQuery(
-    api.members.mySubscriptions,
-    userId ? { userId: userId as any } : 'skip',
-  );
+  const subscriptions = useQuery(api.members.mySubscriptions);
 
   const activeSubscription = subscriptions?.find(
     (s) => !['expired', 'archived'].includes(s.status)
@@ -49,7 +44,9 @@ export default function MemberHomeScreen() {
     return Math.max(0, Math.ceil((end - Date.now()) / 86400000));
   }, [activeSubscription]);
 
-  const qrData = userId ? `fitforge://checkin/${userId}` : 'no-user';
+  const qrData = activeSubscription?.memberId
+    ? `fitforge-member:${activeSubscription.memberId}`
+    : 'fitforge-member:unknown';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -74,6 +71,18 @@ export default function MemberHomeScreen() {
             />
           )}
         </View>
+
+        {/* ── Pending Approval Banner ── */}
+        {subscriptions?.some((s) => s.status === 'pending_approval') && (
+          <View style={styles.pendingBanner}>
+            <Text style={styles.pendingTitle}>⏳ Join Request Pending</Text>
+            <Text style={styles.pendingSub}>
+              Your request to join{' '}
+              {subscriptions!.find((s) => s.status === 'pending_approval')?.gym?.name ?? 'the gym'}{' '}
+              is awaiting owner approval.
+            </Text>
+          </View>
+        )}
 
         {/* ── Subscription Banner ── */}
         {activeSubscription && (
@@ -145,6 +154,17 @@ const styles = StyleSheet.create({
   },
 
   // Subscription banner
+  pendingBanner: {
+    backgroundColor: `${Colors.warning}18`,
+    borderRadius:    Radius.lg,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     `${Colors.warning}44`,
+    gap:             4,
+  },
+  pendingTitle: { ...Typography.headingSm, color: Colors.textPrimary },
+  pendingSub:   { ...Typography.bodySm,   color: Colors.textSecondary },
+
   subBanner: {
     backgroundColor: Colors.surface01,
     borderRadius:    Radius.lg,

@@ -20,6 +20,7 @@ import {
   DMMono_400Regular,
   DMMono_500Medium,
 } from '@expo-google-fonts/dm-mono';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthStore } from '../stores/auth.store';
 import { CONVEX_URL } from '../constants/config';
 
@@ -56,29 +57,56 @@ const convex = new ConvexReactClient(CONVEX_URL, {
 SplashScreen.preventAutoHideAsync();
 
 // ─── Auth Guard ───────────────────────────────────────────────────────────────
+// Source of truth:
+//   - Clerk (`useAuth.isSignedIn`): "is there a real session?" — decides login vs app.
+//   - Zustand (`useAuthStore`): "which role + gym context?" — decides owner vs member.
+// Rules:
+//   1. Clerk signed-out but Zustand still has data → drift, clear Zustand.
+//   2. Clerk signed-out → force /login if not already in (auth).
+//   3. Clerk signed-in but Zustand not yet synced → wait (login.tsx will sync).
+//   4. Signed-in + role known → send away from /login and /otp into the correct tab.
+//      Leave /onboarding and /join-gym alone — those are intentional post-signin stops.
+//   5. Owner in (member) segment or member in (owner) segment → rebound.
 function AuthGuard() {
   const router   = useRouter();
   const segments = useSegments();
-  const { isAuthenticated, isHydrated, role } = useAuthStore();
+  const { isSignedIn, isLoaded } = useAuth(); // Clerk
+  const { isAuthenticated, isHydrated, role, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || !isLoaded) return;
 
-    const inAuth     = segments[0] === '(auth)';
-    const inOwner    = segments[0] === '(owner)';
-    const inMember   = segments[0] === '(member)';
+    const group     = segments[0]; // '(auth)' | '(owner)' | '(member)' | undefined
+    const authSub   = group === '(auth)' ? segments[1] : undefined;
+    const inAuth    = group === '(auth)';
+    const inOwner   = group === '(owner)';
+    const inMember  = group === '(member)';
 
-    if (!isAuthenticated && !inAuth) {
-      // Not logged in → send to login
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated) {
-      if (role === 'owner' && !inOwner) {
-        router.replace('/(owner)/dashboard');
-      } else if (role === 'member' && !inMember) {
-        router.replace('/(member)/home');
-      }
+    // 1. Drift cleanup: Clerk session gone but Zustand still "logged in".
+    if (!isSignedIn && isAuthenticated) {
+      logout();
+      return;
     }
-  }, [isAuthenticated, isHydrated, role, segments]);
+
+    // 2. Fully signed out → always /login.
+    if (!isSignedIn) {
+      if (!inAuth) router.replace('/(auth)/login');
+      return;
+    }
+
+    // 3. Clerk in, Zustand still empty — wait for login.tsx → storeUser() → loginSync().
+    if (!isAuthenticated || !role) return;
+
+    // 4. Signed in + role known. Bounce away from login/otp only.
+    if (authSub === 'login' || authSub === 'otp') {
+      router.replace(role === 'owner' ? '/(owner)/dashboard' : '/(member)/home');
+      return;
+    }
+
+    // 5. Wrong-tab protection.
+    if (role === 'owner' && inMember)  router.replace('/(owner)/dashboard');
+    if (role === 'member' && inOwner) router.replace('/(member)/home');
+  }, [isSignedIn, isLoaded, isAuthenticated, isHydrated, role, segments, logout, router]);
 
   return null;
 }
@@ -116,6 +144,7 @@ export default function RootLayout() {
   }
 
   return (
+    <SafeAreaProvider>
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <AuthGuard />
@@ -133,5 +162,6 @@ export default function RootLayout() {
         </Stack>
       </ConvexProviderWithClerk>
     </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

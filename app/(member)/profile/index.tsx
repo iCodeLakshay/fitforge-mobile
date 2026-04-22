@@ -1,20 +1,20 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/colors';
 import { Layout } from '../../../constants/spacing';
 import { ScreenHeader, Button, Card } from '../../../components/ui';
-import { useAuthStore } from '../../../stores/auth.store';
 import { Typography } from '../../../constants/typography';
 import { Text } from 'react-native';
+import { useSignOut } from '../../../hooks/useSignOut';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function MemberProfileScreen() {
-  const router = useRouter();
-  const { logout, userId } = useAuthStore();
+  const { userId } = useAuth();
+  const signOut = useSignOut();
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/(auth)/login');
+  const handleLogout = async () => {
+    await signOut();
+    // AuthGuard handles the redirect.
   };
 
   return (

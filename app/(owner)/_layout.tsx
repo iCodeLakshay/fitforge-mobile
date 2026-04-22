@@ -1,39 +1,49 @@
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
+import {
+  Squares2X2Icon as Squares2X2Outline,
+  UsersIcon as UsersOutline,
+  QrCodeIcon as QrCodeOutline,
+  CurrencyRupeeIcon as RupeeOutline,
+  Cog6ToothIcon as CogOutline,
+} from 'react-native-heroicons/outline';
+import {
+  Squares2X2Icon as Squares2X2Solid,
+  UsersIcon as UsersSolid,
+  QrCodeIcon as QrCodeSolid,
+  CurrencyRupeeIcon as RupeeSolid,
+  Cog6ToothIcon as CogSolid,
+} from 'react-native-heroicons/solid';
 import { Colors } from '../../constants/colors';
-import { Typography } from '../../constants/typography';
-import { Radius } from '../../constants/spacing';
 
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
+function TabIcon({
+  focused,
+  color,
+  OutlineIcon,
+  SolidIcon,
+}: {
+  focused: boolean;
+  color: string;
+  OutlineIcon: any;
+  SolidIcon: any;
+}) {
+  const Icon = focused ? SolidIcon : OutlineIcon;
 
-interface TabIconProps {
-  name:     IconName;
-  label:    string;
-  focused:  boolean;
-  color:    string;
+  return (
+    <View style={styles.iconWrap}>
+      <Icon size={22} color={color} />
+    </View>
+  );
 }
 
-function TabIcon({ name, label, focused, color }: TabIconProps) {
+function AttendanceCenterIcon({ focused }: { focused: boolean }) {
+  const Icon = focused ? QrCodeSolid : QrCodeOutline;
+
   return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
-      <View style={focused ? {
-        backgroundColor:  `${Colors.accent}18`,
-        width:            48,
-        height:           28,
-        borderRadius:     Radius.full,
-        alignItems:       'center',
-        justifyContent:   'center',
-      } : { width: 48, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={name} size={22} color={color} />
+    <View style={styles.centerOuter}>
+      <View style={[styles.centerBubble, focused && styles.centerBubbleActive]}>
+        <Icon size={24} color={focused ? Colors.textOnAccent : Colors.textPrimary} />
       </View>
-      <Text style={{
-        ...Typography.labelSm,
-        color,
-        fontSize: 10,
-      }}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -44,12 +54,13 @@ export default function OwnerLayout() {
       screenOptions={{
         headerShown:     false,
         tabBarStyle: {
-          backgroundColor:  Colors.surface01,
-          borderTopWidth:   1,
-          borderTopColor:   Colors.border,
-          height:           72,
-          paddingBottom:    12,
-          paddingTop:       8,
+          backgroundColor: Colors.surface01,
+          borderTopWidth: 1,
+          borderTopColor: Colors.border,
+          height: 72,
+          paddingBottom: 12,
+          paddingTop: 8,
+          overflow: 'visible',
         },
         tabBarActiveTintColor:   Colors.accent,
         tabBarInactiveTintColor: Colors.textTertiary,
@@ -60,7 +71,7 @@ export default function OwnerLayout() {
         name="dashboard"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'grid' : 'grid-outline'} label="Dashboard" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={Squares2X2Outline} SolidIcon={Squares2X2Solid} />
           ),
         }}
       />
@@ -68,15 +79,16 @@ export default function OwnerLayout() {
         name="members"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'people' : 'people-outline'} label="Members" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={UsersOutline} SolidIcon={UsersSolid} />
           ),
         }}
       />
       <Tabs.Screen
         name="attendance"
         options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'qr-code' : 'qr-code-outline'} label="Attendance" focused={focused} color={color} />
+          tabBarItemStyle: { marginTop: -22 },
+          tabBarIcon: ({ focused }) => (
+            <AttendanceCenterIcon focused={focused} />
           ),
         }}
       />
@@ -84,7 +96,7 @@ export default function OwnerLayout() {
         name="payments"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'cash' : 'cash-outline'} label="Payments" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={RupeeOutline} SolidIcon={RupeeSolid} />
           ),
         }}
       />
@@ -92,10 +104,39 @@ export default function OwnerLayout() {
         name="settings"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'settings' : 'settings-outline'} label="Settings" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={CogOutline} SolidIcon={CogSolid} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrap: {
+    width: 44,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerOuter: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerBubble: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.surface02,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerBubbleActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+});

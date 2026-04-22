@@ -18,7 +18,7 @@ import { Typography } from '../../constants/typography';
 import { Radius, Layout, Spacing } from '../../constants/spacing';
 import { showError } from '../../stores/ui.store';
 import { useAuthStore } from '../../stores/auth.store';
-import { useOAuth } from '@clerk/clerk-expo';
+import { useOAuth, useAuth } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
@@ -28,34 +28,49 @@ export default function LoginScreen() {
   const router    = useRouter();
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
   const { isAuthenticated } = useConvexAuth();
+  const { isSignedIn } = useAuth();
   const storeUser = useMutation(api.auth.storeUser);
   const loginSync = useAuthStore((s) => s.login);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
 
-  // const sendOtp   = useMutation(api.auth.sendOtp);
-  // const [phone,   setPhone]   = useState('');
   const [loading, setLoading] = useState(false);
-  // const [error,   setError]   = useState('');
+  const [syncing, setSyncing] = useState(false); // guards against effect double-fire
 
+  // Once Clerk auth is ready AND Zustand is hydrated, sync user to Convex.
+  // - New user → push to /onboarding.
+  // - Returning owner/member → AuthGuard will redirect once Zustand is updated.
   useEffect(() => {
-    if (isAuthenticated) {
-      setLoading(true);
-      storeUser()
-        .then((res) => {
-          loginSync({ userId: res.userId, role: res.role, gymId: res.gymId });
-          setLoading(false);
-          if (res.isNewUser) {
-            router.replace('/(auth)/onboarding');
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          setLoading(false);
-          showError('Failed to sync user with database');
+    if (!isAuthenticated || !isHydrated || syncing) return;
+
+    setSyncing(true);
+    setLoading(true);
+    storeUser()
+      .then((res) => {
+        loginSync({
+          userId: res.userId,
+          role:   res.role,
+          gymId:  res.gymId,
         });
-    }
-  }, [isAuthenticated, storeUser, loginSync, router]);
+        if (res.isNewUser) {
+          router.replace('/(auth)/onboarding');
+        } else {
+          // Explicit navigation — don't rely solely on AuthGuard firing after state update.
+          router.replace(res.role === 'owner' ? '/(owner)/dashboard' : '/(member)/home');
+        }
+      })
+      .catch((err) => {
+        console.error('[login] storeUser failed:', err);
+        showError('Failed to sync user. Please try again.');
+        setSyncing(false); // allow retry
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [isAuthenticated, isHydrated]);
 
   const handleGoogleLogin = async () => {
+    // Already signed in — let the useEffect sync handle navigation, don't start OAuth again.
+    if (isSignedIn || loading) return;
     setLoading(true);
     try {
       const { createdSessionId, setActive } = await startOAuthFlow({
@@ -63,6 +78,9 @@ export default function LoginScreen() {
       });
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
+        // Session activated — the useEffect will take over once isAuthenticated becomes true.
+        // Clear loading so the spinner reflects the sync phase cleanly.
+        setLoading(false);
       } else {
         setLoading(false);
       }

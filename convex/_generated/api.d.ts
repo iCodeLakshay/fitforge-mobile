@@ -14,6 +14,7 @@ import type * as crons from "../crons.js";
 import type * as gym from "../gym.js";
 import type * as gyms from "../gyms.js";
 import type * as healthProfiles from "../healthProfiles.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as members from "../members.js";
 import type * as payments from "../payments.js";
 import type * as plans from "../plans.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   gym: typeof gym;
   gyms: typeof gyms;
   healthProfiles: typeof healthProfiles;
+  "lib/auth": typeof lib_auth;
   members: typeof members;
   payments: typeof payments;
   plans: typeof plans;

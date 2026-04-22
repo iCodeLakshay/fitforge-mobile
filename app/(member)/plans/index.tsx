@@ -13,9 +13,9 @@ import { formatTimestamp } from '../../../utils/date';
 
 export default function PlansListScreen() {
   const router = useRouter();
-  const { userId, gymId } = useAuthStore();
+  const { gymId } = useAuthStore();
 
-  const plans = useQuery(api.plans.listForMember, gymId && userId ? { gymId: gymId as Id<'gyms'>, memberId: userId as Id<'users'> } : 'skip');
+  const plans = useQuery(api.plans.listForMember, gymId ? { gymId: gymId as Id<'gyms'> } : 'skip');
 
   if (plans === undefined) {
     return <LoadingOverlay message="Loading plans..." />;

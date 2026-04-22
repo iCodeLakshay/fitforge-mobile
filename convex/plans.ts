@@ -2,7 +2,7 @@ import { query, action, internalMutation } from './_generated/server';
 import { v } from 'convex/values';
 import { internal } from './_generated/api';
 import Anthropic from '@anthropic-ai/sdk';
-import { requireGymOwnerOrMember, requireGymOwner } from './auth';
+import { requireGymOwnerOrMember, requireGymOwner, getAuthUserId } from './auth';
 
 export const getPlan = query({
   args: { planId: v.id('aiPlans') },
@@ -15,12 +15,26 @@ export const getPlan = query({
 });
 
 export const listForMember = query({
-  args: { gymId: v.id('gyms'), memberId: v.id('users') },
-  handler: async (ctx, { gymId, memberId }) => {
-    await requireGymOwnerOrMember(ctx, gymId, memberId);
+  args: { gymId: v.id('gyms') },
+  handler: async (ctx, { gymId }) => {
+    const callerId = await getAuthUserId(ctx);
+
+    const gym = await ctx.db.get(gymId);
+    if (!gym) throw new Error('Gym not found');
+
+    const membership = await ctx.db
+      .query('memberships')
+      .withIndex('by_gym_member', (q) => q.eq('gymId', gymId).eq('memberId', callerId))
+      .filter((q) => q.neq(q.field('status'), 'archived'))
+      .first();
+
+    if (gym.ownerId !== callerId && !membership) {
+      throw new Error('Unauthorized');
+    }
+
     return await ctx.db
       .query('aiPlans')
-      .withIndex('by_gym_member', (q) => q.eq('gymId', gymId).eq('memberId', memberId))
+      .withIndex('by_gym_member', (q) => q.eq('gymId', gymId).eq('memberId', callerId))
       .order('desc')
       .collect();
   },

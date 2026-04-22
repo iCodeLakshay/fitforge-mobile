@@ -16,7 +16,7 @@ export default function QRScanScreen() {
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
   const markAttendance = useMutation(api.attendance.mark);
-  const { gymId, userId } = useAuthStore();
+  const { gymId } = useAuthStore();
   const { showToast } = useUIStore();
 
   if (!permission) return <View />;

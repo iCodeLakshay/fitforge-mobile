@@ -126,8 +126,11 @@ export const storeUser = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Called storeUser without authentication present");
 
-    // Look up by email (from Google) or phone, we store it in phone field for now since phone is required in schema
-    const identityStr = identity.email || identity.phoneNumber || identity.subject;
+    const email = (identity.email ?? '').trim() || undefined;
+    const fullName = (identity.name ?? '').trim() || undefined;
+
+    // Look up by email (from Google) or phone. We currently keep this in `phone` for legacy schema compatibility.
+    const identityStr = email || identity.phoneNumber || identity.subject;
 
     let user = await ctx.db
       .query('users')
@@ -139,12 +142,22 @@ export const storeUser = mutation({
     if (!user) {
       const uid = await ctx.db.insert('users', {
         phone: identityStr,
-        name: identity.name,
+        name: fullName,
+        email,
         role: 'member', 
         isActive: true,
         createdAt: Date.now(),
       });
       user = await ctx.db.get(uid);
+    } else {
+      const patch: { name?: string; email?: string } = {};
+      if (!user.name && fullName) patch.name = fullName;
+      if (!user.email && email) patch.email = email;
+
+      if (Object.keys(patch).length > 0) {
+        await ctx.db.patch(user._id, patch);
+        user = { ...user, ...patch };
+      }
     }
 
     if (!user) throw new Error('User creation failed');
@@ -171,7 +184,7 @@ export async function getAuthUserId(ctx: { auth: any, db: any }) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
   const identityStr = identity.email || identity.phoneNumber || identity.subject;
-  const user = await ctx.db.query('users').withIndex('by_phone', (q) => q.eq('phone', identityStr)).first();
+  const user = await ctx.db.query('users').withIndex('by_phone', (q: any) => q.eq('phone', identityStr)).first();
   if (!user) throw new Error("User not found");
   return user._id;
 }

@@ -16,7 +16,7 @@ import { useUIStore } from '../../../../stores/ui.store';
 export default function GeneratePlanScreen() {
   const { id } = useLocalSearchParams<{ id: Id<'users'> }>();
   const router = useRouter();
-  const { gymId, userId } = useAuthStore();
+  const { gymId } = useAuthStore();
   const { setLoading, showToast } = useUIStore();
 
   const healthProfile = useQuery(api.healthProfiles.get, gymId && id ? { gymId: gymId as Id<'gyms'>, memberId: id } : 'skip');

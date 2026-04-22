@@ -4,11 +4,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { gymId, userId } = useAuthStore();
+  const { gymId } = useAuthStore();
 
   const dashboard = useQuery(
     api.gyms.getDashboard,
@@ -39,7 +39,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scroll}
@@ -94,6 +94,26 @@ export default function DashboardScreen() {
             </Text>
           )}
         </View>
+
+        {/* ── Pending Approvals ── */}
+        {(dashboard?.stats?.pendingApproval ?? 0) > 0 && (
+          <TouchableOpacity
+            style={styles.pendingCard}
+            onPress={() => router.push('/(owner)/members/pending' as any)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.pendingLeft}>
+              <View style={styles.pendingDot} />
+              <View>
+                <Text style={styles.pendingTitle}>
+                  {dashboard!.stats!.pendingApproval} Pending Approval{dashboard!.stats!.pendingApproval > 1 ? 's' : ''}
+                </Text>
+                <Text style={styles.pendingSub}>Tap to review join requests</Text>
+              </View>
+            </View>
+            <Text style={styles.pendingChevron}>›</Text>
+          </TouchableOpacity>
+        )}
 
         {/* ── Renewals Due ── */}
         {(dashboard?.renewalAlerts?.length ?? 0) > 0 && (
@@ -201,6 +221,23 @@ const styles = StyleSheet.create({
   revenueLabel: { ...Typography.labelSm, color: Colors.textSecondary },
   revenueValue: { ...Typography.displayLg, color: Colors.textPrimary, lineHeight: 52 },
   revenueSub:   { ...Typography.bodySm, color: Colors.warning },
+
+  // Pending approvals
+  pendingCard: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'space-between',
+    backgroundColor: `${Colors.warning}18`,
+    borderRadius:    Radius.lg,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     `${Colors.warning}44`,
+  },
+  pendingLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pendingDot:     { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.warning },
+  pendingTitle:   { ...Typography.headingSm, color: Colors.textPrimary },
+  pendingSub:     { ...Typography.bodySm,   color: Colors.textSecondary },
+  pendingChevron: { fontSize: 22, color: Colors.warning, fontWeight: '600' },
 
   // Check-in rows
   checkInRow: {

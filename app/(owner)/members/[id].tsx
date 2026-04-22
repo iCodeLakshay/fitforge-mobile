@@ -72,6 +72,22 @@ export default function MemberDetailScreen() {
           />
         </View>
 
+        {/* Edit Actions */}
+        <View style={styles.actionsBox}>
+          <Button
+            title="Edit Profile"
+            variant="ghost"
+            onPress={() => router.push(`/(owner)/members/${id}/edit-profile` as any)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            title="Edit Subscription"
+            variant="ghost"
+            onPress={() => router.push(`/(owner)/members/${id}/edit-subscription` as any)}
+            style={{ flex: 1 }}
+          />
+        </View>
+
         {/* Membership Info */}
         <Card padding style={styles.card}>
           <Text style={styles.sectionTitle}>Membership Details</Text>

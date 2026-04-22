@@ -1,26 +1,35 @@
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
+import {
+  HomeIcon as HomeOutline,
+  DocumentTextIcon as PlanOutline,
+  CalendarDaysIcon as CalendarOutline,
+  UserCircleIcon as ProfileOutline,
+} from 'react-native-heroicons/outline';
+import {
+  HomeIcon as HomeSolid,
+  DocumentTextIcon as PlanSolid,
+  CalendarDaysIcon as CalendarSolid,
+  UserCircleIcon as ProfileSolid,
+} from 'react-native-heroicons/solid';
 import { Colors } from '../../constants/colors';
-import { Typography } from '../../constants/typography';
-import { Radius } from '../../constants/spacing';
-
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 function TabIcon({
-  name, label, focused, color,
-}: { name: IconName; label: string; focused: boolean; color: string }) {
+  focused,
+  color,
+  OutlineIcon,
+  SolidIcon,
+}: {
+  focused: boolean;
+  color: string;
+  OutlineIcon: any;
+  SolidIcon: any;
+}) {
+  const Icon = focused ? SolidIcon : OutlineIcon;
+
   return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
-      <View style={focused ? {
-        backgroundColor: `${Colors.accent}18`,
-        width: 48, height: 28,
-        borderRadius: Radius.full,
-        alignItems: 'center', justifyContent: 'center',
-      } : { width: 48, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-        <Ionicons name={name} size={22} color={color} />
-      </View>
-      <Text style={{ ...Typography.labelSm, color, fontSize: 10 }}>{label}</Text>
+    <View style={styles.iconWrap}>
+      <Icon size={22} color={color} />
     </View>
   );
 }
@@ -47,7 +56,7 @@ export default function MemberLayout() {
         name="home"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'home' : 'home-outline'} label="Home" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={HomeOutline} SolidIcon={HomeSolid} />
           ),
         }}
       />
@@ -55,7 +64,7 @@ export default function MemberLayout() {
         name="plans"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'barbell' : 'barbell-outline'} label="Plans" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={PlanOutline} SolidIcon={PlanSolid} />
           ),
         }}
       />
@@ -63,7 +72,7 @@ export default function MemberLayout() {
         name="attendance"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'calendar' : 'calendar-outline'} label="Calendar" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={CalendarOutline} SolidIcon={CalendarSolid} />
           ),
         }}
       />
@@ -71,10 +80,19 @@ export default function MemberLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} label="Profile" focused={focused} color={color} />
+            <TabIcon focused={focused} color={color} OutlineIcon={ProfileOutline} SolidIcon={ProfileSolid} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrap: {
+    width: 44,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

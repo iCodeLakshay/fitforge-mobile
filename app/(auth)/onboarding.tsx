@@ -19,11 +19,11 @@ import { Radius, Layout, Spacing } from '../../constants/spacing';
 import { useAuthStore } from '../../stores/auth.store';
 import { showError } from '../../stores/ui.store';
 
-type Step = 'role' | 'gym_setup' | 'join_gym';
+type Step = 'role' | 'gym_setup';
 
 export default function OnboardingScreen() {
   const router        = useRouter();
-  const { userId, setGymContext, login } = useAuthStore();
+  const { login } = useAuthStore();
   const createGym     = useMutation(api.gyms.create);
 
   const [step,      setStep]      = useState<Step>('role');
@@ -33,18 +33,15 @@ export default function OnboardingScreen() {
   const [gymErrors, setGymErrors] = useState({ name: '', city: '' });
 
   const handleSelectOwner = () => {
-    if (!userId) return;
     setStep('gym_setup');
   };
 
-  const handleSelectMember = () => {
-    if (!userId) return;
-    login({ userId, role: 'member' });
-    setStep('join_gym');
+  const handleSelectMember = async () => {
+    await login({ role: 'member' });
+    router.replace('/(auth)/join-gym');
   };
 
   const handleCreateGym = async () => {
-    if (!userId) return;
     const errors = { name: '', city: '' };
     if (!gymName.trim()) errors.name = 'Gym name is required';
     if (!gymCity.trim()) errors.city = 'City is required';
@@ -53,9 +50,11 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       const result = await createGym({ name: gymName.trim(), city: gymCity.trim() });
-      setGymContext(result.gymId);
-      login({ userId, role: 'owner', gymId: result.gymId });
-      // AuthGuard will redirect to /owner/dashboard
+      // Update Zustand with owner role + gymId. AuthGuard sees the role change
+      // while we're on an (auth) screen that's not /login, so it won't bounce us.
+      // Explicit replace guarantees navigation regardless of guard timing.
+      await login({ role: 'owner', gymId: result.gymId });
+      router.replace('/(owner)/dashboard');
     } catch (e: any) {
       showError(e?.message ?? 'Failed to create gym');
     } finally {
@@ -126,26 +125,6 @@ export default function OnboardingScreen() {
           </>
         )}
 
-        {step === 'join_gym' && (
-          <>
-            <Text style={styles.title}>JOIN YOUR GYM</Text>
-            <Text style={styles.sub}>Your gym owner will share a GYM-XXXXX code or add you manually</Text>
-
-            <View style={styles.infoCard}>
-              <Text style={styles.infoIcon}>📲</Text>
-              <Text style={styles.infoText}>
-                Ask your gym owner to add you from the <Text style={{ color: Colors.accent }}>FitForge Owner App</Text>, or give them your registered number.
-              </Text>
-            </View>
-
-            <Button
-              label="I'VE BEEN ADDED →"
-              variant="primary"
-              fullWidth
-              onPress={() => router.replace('/(member)/home')}
-            />
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -174,16 +153,4 @@ const styles = StyleSheet.create({
   roleSub:     { ...Typography.bodySm,   color: Colors.textSecondary, marginTop: 2 },
   roleChevron: { paddingLeft: 8 },
 
-  infoCard: {
-    flexDirection:    'row',
-    backgroundColor:  Colors.surface01,
-    borderRadius:     Radius.lg,
-    padding:          Layout.cardPaddingH,
-    borderWidth:      1,
-    borderColor:      Colors.border,
-    gap:              12,
-    alignItems:       'flex-start',
-  },
-  infoIcon: { fontSize: 24 },
-  infoText: { ...Typography.bodyMd, color: Colors.textSecondary, flex: 1 },
 });

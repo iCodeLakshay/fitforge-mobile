@@ -10,9 +10,7 @@ import { Typography } from '../../../constants/typography';
 import { ScreenHeader, EmptyState, LoadingOverlay } from '../../../components/ui';
 
 export default function MemberAttendanceScreen() {
-  const { userId } = useAuthStore();
-  
-  const history = useQuery(api.attendance.listForMember, userId ? {} : 'skip');
+  const history = useQuery(api.attendance.listForMember, {});
 
   if (history === undefined) {
     return <LoadingOverlay message="Loading attendance history..." />;
